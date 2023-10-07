@@ -1,0 +1,2 @@
+exception InputClosed(string)
+
