@@ -9,7 +9,7 @@ let rec connectNeuron = (connections: list<connection>, singleNeuron, neuronList
   | list{singleNeuron2, ...restNeurons2} => {
       let newConnection = makeConnection(singleNeuron, singleNeuron2)
       let newConnections = Belt.List.add(connections, newConnection)
-      connectNeuron(newConnections, singleNeuron, restNeurons2)cp
+      connectNeuron(newConnections, singleNeuron, restNeurons2)
     }
   }
 }
