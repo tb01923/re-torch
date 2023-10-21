@@ -10,6 +10,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "mathjs": "^11.11.2",
     "rescript": "^10.1.4",
     "uuid": "^9.0.1"
   },
