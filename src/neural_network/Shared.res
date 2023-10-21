@@ -20,3 +20,8 @@ let default = (someFloat, defaultFloat) =>
   | Some(f) => f
   | None => defaultFloat
   }
+
+let last = arr => {
+  let l = Belt.Array.length(arr)
+  Belt.Array.getUnsafe(arr, l - 1)
+}

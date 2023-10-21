@@ -29,12 +29,12 @@ let getNeuronId = n =>
 
 exception NeuronValueNotSet(neuron)
 let getNeuronValue: neuron => float = n => {
-  switch n {
+  let someValue = switch n {
   | InputNeuron(_, {?value}) => value
   | MiddleNeuron(_, {?value}) => value
   | OutputNeuron(_, {?value}) => value
-  } ->
-  switch {
+  }
+  switch someValue {
   | Some(value) => value
   | None => raise(NeuronValueNotSet(n))
   }

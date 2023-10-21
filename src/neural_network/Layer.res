@@ -4,25 +4,35 @@ open Synapse
 
 type layerRecord = {
   neurons: array<neuron>,
-  mutable initialWeights?: array<weight>,
+  mutable initialWeights?: array<array<weight>>,
   mutable synapses?: array<synapse>,
 }
 
-type layer = LinearLayer(layerRecord)
+type layer =
+  | LinearLayer(layerRecord)
+  | LinearInputLayer(layerRecord)
 
-let makeLinearLayer = (~weights=?, neurons) =>
+let makeLinearLayer = (~weights: option<array<array<weight>>>=?, neurons) =>
   switch weights {
   | Some(w) => LinearLayer({neurons, initialWeights: w})
   | _ => LinearLayer({neurons: neurons})
   }
 
+let makeLinearInputLayer = (~weights: option<array<array<weight>>>=?, neurons) =>
+  switch weights {
+  | Some(w) => LinearInputLayer({neurons, initialWeights: w})
+  | _ => LinearInputLayer({neurons: neurons})
+  }
+
 let getLayerRecord = layer =>
   switch layer {
+  | LinearInputLayer(r) => r
   | LinearLayer(r) => r
   }
 
 let getNeurons = layer =>
   switch layer {
+  | LinearInputLayer({neurons, _}) => neurons
   | LinearLayer({neurons, _}) => neurons
   }
 
@@ -32,6 +42,7 @@ let getSynapses = layer =>
   | _ => []
   }
 
+exception IllogicalLayerConnection(layer, layer)
 exception WeightlessSynapse(layer, layer)
 
 let connectLayer1ToLayer2 = (layer1, layer2) => {
@@ -49,8 +60,11 @@ let connectLayer1ToLayer2 = (layer1, layer2) => {
     }
   }
   switch (layer1, layer2) {
+  | (LinearInputLayer(layerRecord1), LinearLayer(layerRecord2)) =>
+    connectLayers(layerRecord1, layerRecord2)
   | (LinearLayer(layerRecord1), LinearLayer(layerRecord2)) =>
     connectLayers(layerRecord1, layerRecord2)
+  | (_, _) => raise(IllogicalLayerConnection(layer1, layer2))
   }
   layer1
 }
