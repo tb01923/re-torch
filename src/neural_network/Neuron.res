@@ -1,7 +1,7 @@
 open Shared
 
 type neuronRecord = {
-  fn: input_and_weight_to_float,
+  fn: (MathJs.Vector.Float.t, MathJs.Vector.Float.t) => float,
   bias?: float,
   mutable value?: float,
 }

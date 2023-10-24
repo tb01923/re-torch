@@ -5,22 +5,27 @@ open Synapse
 
 // todo: handle |inputs| != |layer.neurons|
 let forwardFromInput = (layer, inputs) => {
+  let get = MathJs.Vector.Float.get
   let neurons = getNeurons(layer)
   Belt.Array.forEachWithIndex(neurons, (i, neuron) => {
     let inputRecord = getInputNeuronRecord(neuron)
-    inputRecord.value = Some(inputRecord.fn(inputs[i]))
+    inputRecord.value = Some(inputRecord.fn(get(inputs, i)))
   })
   layer
 }
 
-let getValuesAndWeightsFromSynapses: array<synapse> => (array<input>, array<weight>) = synapses => {
+let getValuesAndWeightsFromSynapses: array<synapse> => (
+  MathJs.Vector.Float.t,
+  MathJs.Vector.Float.t,
+) = synapses => {
+  let emptyVector = MathJs.Vector.Float.empty
   // for each synapse reduce onto a pair of empty arrays by pushing the input neuron value and the weight
-  Belt.Array.reduce(synapses, ([], []), (agg, synapse) => {
+  Belt.Array.reduce(synapses, (emptyVector(), emptyVector()), (agg, synapse) => {
     let (n1, weight, _) = synapse
-    let (values: array<input>, weights) = agg
+    let (values: MathJs.Vector.Float.t, weights) = agg
     let value = getNeuronValue(n1)
-    Belt.Array.push(values, value)->ignore
-    Belt.Array.push(weights, weight)->ignore
+    MathJs.Vector.Float.push(values, value)->ignore
+    MathJs.Vector.Float.push(weights, weight)->ignore
     (values, weights)
   })
 }
@@ -36,7 +41,7 @@ let feedNeuron = synapses => {
   let bias = default(neuronRecord.bias, 0.)
 
   // apply the inputs and weights to it's calculation function and add the bias
-  neuronRecord.value = Some(neuronRecord.fn(values, weights) +. bias)
+  neuronRecord.value = Some(neuronRecord.fn(weights, values) +. bias)
 }
 
 let petitionSynapsesByOutputNeuron = (outputNeuronToMatch, synapses) =>
@@ -67,7 +72,7 @@ let forwardFromPriorLayer = layer => {
   layer
 }
 
-let forward: (array<layer>, array<input>) => array<layer> = (layers, inputs) => {
+let forward: (array<layer>, floatVector) => array<layer> = (layers, inputs) => {
   Belt.Array.map(layers, layer =>
     switch layer {
     | LinearInputLayer(_) => forwardFromInput(layer, inputs)

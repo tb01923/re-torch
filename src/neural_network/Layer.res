@@ -4,7 +4,7 @@ open Synapse
 
 type layerRecord = {
   neurons: array<neuron>,
-  mutable initialWeights?: array<array<weight>>,
+  mutable initialWeights?: floatMatrix,
   mutable synapses?: array<synapse>,
 }
 
@@ -12,13 +12,13 @@ type layer =
   | LinearLayer(layerRecord)
   | LinearInputLayer(layerRecord)
 
-let makeLinearLayer = (~weights: option<array<array<weight>>>=?, neurons) =>
+let makeLinearLayer = (~weights: option<floatMatrix>=?, neurons) =>
   switch weights {
   | Some(w) => LinearLayer({neurons, initialWeights: w})
   | _ => LinearLayer({neurons: neurons})
   }
 
-let makeLinearInputLayer = (~weights: option<array<array<weight>>>=?, neurons) =>
+let makeLinearInputLayer = (~weights: option<floatMatrix>=?, neurons) =>
   switch weights {
   | Some(w) => LinearInputLayer({neurons, initialWeights: w})
   | _ => LinearInputLayer({neurons: neurons})
@@ -69,15 +69,19 @@ let connectLayer1ToLayer2 = (layer1, layer2) => {
   layer1
 }
 
-let rec connectLayers = (layers: array<layer>) => {
-  switch layers {
-  | [] => ignore()
-  | [_] => ignore()
-  | [l1, l2] => connectLayer1ToLayer2(l1, l2)->ignore
-  | _ => {
-      connectLayer1ToLayer2(layers[0], layers[1])->ignore
-      Js.Array2.shift(layers)->ignore
-      connectLayers(layers)
+let connectLayers = (layers: array<layer>) => {
+  let rec _connectLayers = (layers: array<layer>) => {
+    switch layers {
+    | [] => ignore()
+    | [_] => ignore()
+    | [l1, l2] => connectLayer1ToLayer2(l1, l2)->ignore
+    | _ => {
+        connectLayer1ToLayer2(layers[0], layers[1])->ignore
+        Js.Array2.shift(layers)->ignore
+        _connectLayers(layers)
+      }
     }
   }
+  _connectLayers(layers)
+  layers
 }

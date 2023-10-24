@@ -12,11 +12,8 @@ let getOutputNeuron = synapse =>
 //given a synapse, extract the uuid of the output neuron
 let getSynapseOutputNeuronId = synapse => synapse->getOutputNeuron->getNeuronId
 
-let makeSynapses = (
-  neurons1: array<neuron>,
-  weights: array<array<weight>>,
-  neurons2: array<neuron>,
-): array<synapse> => {
+type neurons = array<neuron>
+let makeSynapses = (neurons1: neurons, weights: floatMatrix, neurons2: neurons): array<synapse> => {
   /*
     dimensions(neurons1) = 1
     |neurons1| = n
@@ -34,8 +31,17 @@ let makeSynapses = (
     2b. map(step 2a)                    => [[synapse]]
  */
 
-  let pair = ((n2, inputWeights)) =>
-    Belt.Array.zip(neurons1, inputWeights)->Belt.Array.map(((n1, w)) => makeSynapse(n1, w, n2))
+  open MathJs.Vector.Float
+  open MathJs.Matrix.Float
 
-  Belt.Array.zip(neurons2, weights)->Belt.Array.flatMap(pair)
+  let pair = ((n2, inputWeights: floatVector)) => {
+    let _makeSynapse = ((n1, w)) => makeSynapse(n1, w, n2)
+    let zipped = Belt.Array.zip(neurons1, toArray(inputWeights))
+    let mapped = Belt.Array.map(zipped, _makeSynapse)
+    mapped
+  }
+
+  let zipped = Belt.Array.zip(neurons2, toArrayOfVectors(weights))
+  let mapped = Belt.Array.flatMap(zipped, pair)
+  mapped
 }

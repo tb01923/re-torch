@@ -11,9 +11,12 @@ type input = float
 type weight = float
 type bias = float
 
+type floatMatrix = MathJs.Matrix.Float.t
+type floatVector = MathJs.Vector.Float.t
+
 // function from (input,  weight) to a float
-type input_and_weight = (array<input>, array<weight>)
-type input_and_weight_to_float = (array<input>, array<weight>) => float
+//type weight_and_input = (array<weight>, array<input>)
+//type weight_and_input_to_float = (array<weight>, array<input>) => float
 
 let default = (someFloat, defaultFloat) =>
   switch someFloat {
