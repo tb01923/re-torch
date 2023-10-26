@@ -8,9 +8,28 @@ type layerRecord = {
   mutable synapses?: array<synapse>,
 }
 
+type linearMatrixLayerRecord = {
+  inputNeuronCount: int,
+  outputNeuronCount: int,
+  mutable weights: floatMatrix,
+  mutable biases: floatMatrix,
+  mutable values?: floatMatrix,
+}
+
 type layer =
   | LinearLayer(layerRecord)
   | LinearInputLayer(layerRecord)
+  | LinearMatrixLayer(linearMatrixLayerRecord)
+
+exception UnexpectedLayer(string, layer)
+exception LayerMismatch(string, layer, layer)
+
+let raiseNoSynapseInLineaMatrixLayer = layer =>
+  raise(UnexpectedLayer("No synapses in LinearMatrixLayer", layer))
+let raiseInvalidLayerConnection = (layer1, layer2) =>
+  raise(LayerMismatch("Layers cannot be connected", layer1, layer2))
+let raiseExpectedWeightedSynapses = (layer1, layer2) =>
+  raise(LayerMismatch("Expected layers to share weighted synapse", layer1, layer2))
 
 let makeLinearLayer = (~weights: option<floatMatrix>=?, neurons) =>
   switch weights {
@@ -36,21 +55,24 @@ let getNeurons = layer =>
   | LinearLayer({neurons, _}) => neurons
   }
 
-let getSynapses = layer =>
-  switch getLayerRecord(layer).synapses {
+let getSynapses = layer => {
+  let synapses = switch layer {
+  | LinearInputLayer(record) => record.synapses
+  | LinearLayer(record) => record.synapses
+  | LinearMatrixLayer(_) => raiseNoSynapseInLineaMatrixLayer(layer)
+  }
+  switch synapses {
   | Some(synapses) => synapses
   | _ => []
   }
-
-exception IllogicalLayerConnection(layer, layer)
-exception WeightlessSynapse(layer, layer)
+}
 
 let connectLayer1ToLayer2 = (layer1, layer2) => {
   let connectLayers = (layerRecord1, layerRecord2) => {
     let {neurons: neurons1, ?initialWeights, ?synapses} = layerRecord1
     let {neurons: neurons2, _} = layerRecord2
     switch (initialWeights, synapses) {
-    | (None, None) => raise(WeightlessSynapse(layer1, layer2))
+    | (None, None) => raiseExpectedWeightedSynapses(layer1, layer2)
     | (Some(w), None) => {
         let synapses = makeSynapses(neurons1, w, neurons2)
         layerRecord1.synapses = Some(synapses)
@@ -64,7 +86,7 @@ let connectLayer1ToLayer2 = (layer1, layer2) => {
     connectLayers(layerRecord1, layerRecord2)
   | (LinearLayer(layerRecord1), LinearLayer(layerRecord2)) =>
     connectLayers(layerRecord1, layerRecord2)
-  | (_, _) => raise(IllogicalLayerConnection(layer1, layer2))
+  | (_, _) => raiseInvalidLayerConnection(layer1, layer2)
   }
   layer1
 }

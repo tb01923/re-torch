@@ -3,6 +3,10 @@ open Neuron
 open Layer
 open Synapse
 
+exception NotImplemented(string, layer)
+let raiseForwardMatrixNotImplemented = layer =>
+  raise(NotImplemented("forwardMatrix is not implemented for this Layer type", layer))
+
 // todo: handle |inputs| != |layer.neurons|
 let forwardFromInput = (layer, inputs) => {
   let get = MathJs.Vector.Float.get
@@ -72,11 +76,50 @@ let forwardFromPriorLayer = layer => {
   layer
 }
 
-let forward: (array<layer>, floatVector) => array<layer> = (layers, inputs) => {
-  Belt.Array.map(layers, layer =>
-    switch layer {
+let forwardMatrixThroughMatrixLayer = (layer, inputMatrix) => {
+  open MathJs.Matrix.Float
+
+  switch layer {
+  | LinearMatrixLayer(record) => {
+      let {weights, biases} = record
+      let values = inputMatrix->transpose->multiply(weights, _)->add(transpose(biases))
+      record.values = Some(values)
+    }
+  | _ => raise(UnexpectedLayer("Expecting LinearMatrixLayer", layer))
+  }
+  layer
+}
+
+let forwardVectorThroughMatrixLayer = (layer, inputs) => {
+  open MathJs.Matrix.Float
+  switch layer {
+  | LinearMatrixLayer(record) => {
+      let inputMatrix = inputs->fromVector
+      forwardMatrixThroughMatrixLayer(layer, inputMatrix)
+    }
+
+  | _ => raise(UnexpectedLayer("Expecting LinearMatrixLayer", layer))
+  }
+}
+
+let forwardVector: (array<layer>, floatVector) => array<layer> = (layers, inputs) =>
+  Belt.Array.reduce(layers, [], (processedLayers, layer) => {
+    let processedLayer = switch layer {
     | LinearInputLayer(_) => forwardFromInput(layer, inputs)
     | LinearLayer(_) => forwardFromPriorLayer(layer)
+    | LinearMatrixLayer(_) => forwardVectorThroughMatrixLayer(layer, inputs)
     }
-  )
-}
+    Belt.Array.push(processedLayers, processedLayer)
+    processedLayers
+  })
+
+let forwardMatrix: (array<layer>, floatMatrix) => array<layer> = (layers, inputs) =>
+  Belt.Array.reduce(layers, [], (processedLayers, layer) => {
+    let processedLayer = switch layer {
+    | LinearInputLayer(_) => raiseForwardMatrixNotImplemented(layer)
+    | LinearLayer(_) => raiseForwardMatrixNotImplemented(layer)
+    | LinearMatrixLayer(_) => forwardMatrixThroughMatrixLayer(layer, inputs)
+    }
+    Belt.Array.push(processedLayers, processedLayer)
+    processedLayers
+  })

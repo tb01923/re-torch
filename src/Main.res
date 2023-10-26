@@ -29,6 +29,32 @@ Js.Console.log(out)
 
 Js.Console.log("------------------")
 
+open Layer
+open FeedForward
+
+let matrixLayerRecord = {
+  inputNeuronCount: 4,
+  outputNeuronCount: 3,
+  weights,
+  biases,
+}
+let matrixLayer = LinearMatrixLayer(matrixLayerRecord)
+
+forwardVector([matrixLayer], inputs)->ignore
+Js.Console.log(matrixLayerRecord.values)
+Js.Console.log("------------------")
+let matrixLayerRecord2 = {
+  inputNeuronCount: 4,
+  outputNeuronCount: 3,
+  weights,
+  biases,
+}
+let matrixLayer2 = LinearMatrixLayer(matrixLayerRecord2)
+
+forwardMatrix([matrixLayer2], inputs->fromVector)->ignore
+Js.Console.log(matrixLayerRecord2.values)
+Js.Console.log("------------------")
+
 /***********************************
  * modeled solution 1 types
  **********************************/
@@ -49,5 +75,5 @@ let inputLayer = makeLinearInputLayer(inputNeurons, ~weights)
 let outputLayer = makeLinearLayer([endNeuron, endNeuron2, endNeuron3])
 let layers = connectLayers([inputLayer, outputLayer])
 
-forward(layers, inputs)->ignore
+forwardVector(layers, inputs)->ignore
 outputLayer->getNeurons->Belt.Array.map(getNeuronValue)->Js.Console.log
