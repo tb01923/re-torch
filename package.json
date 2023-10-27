@@ -15,6 +15,7 @@
     "uuid": "^9.0.1"
   },
   "devDependencies": {
+    "reanalyze": "^2.23.0",
     "rescript-uuid": "^9.0.0-rc"
   }
 }

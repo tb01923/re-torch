@@ -9,8 +9,8 @@ type layerRecord = {
 }
 
 type linearMatrixLayerRecord = {
-  inputNeuronCount: int,
-  outputNeuronCount: int,
+  @live inputNeuronCount: int,
+  @live outputNeuronCount: int,
   mutable weights: floatMatrix,
   mutable biases: floatMatrix,
   mutable values?: floatMatrix,
@@ -37,22 +37,17 @@ let makeLinearLayer = (~weights: option<floatMatrix>=?, neurons) =>
   | _ => LinearLayer({neurons: neurons})
   }
 
-let makeLinearInputLayer = (~weights: option<floatMatrix>=?, neurons) =>
+let makeLinearInputLayer = (weights: option<floatMatrix>, neurons) =>
   switch weights {
   | Some(w) => LinearInputLayer({neurons, initialWeights: w})
   | _ => LinearInputLayer({neurons: neurons})
-  }
-
-let getLayerRecord = layer =>
-  switch layer {
-  | LinearInputLayer(r) => r
-  | LinearLayer(r) => r
   }
 
 let getNeurons = layer =>
   switch layer {
   | LinearInputLayer({neurons, _}) => neurons
   | LinearLayer({neurons, _}) => neurons
+  | LinearMatrixLayer(_) => raiseNoSynapseInLineaMatrixLayer(layer)
   }
 
 let getSynapses = layer => {

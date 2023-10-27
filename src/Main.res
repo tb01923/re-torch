@@ -84,7 +84,7 @@ let run = () => {
   let endNeuron2 = makeOutputNeuron(dot, bias2)
   let endNeuron3 = makeOutputNeuron(dot, bias3)
 
-  let inputLayer = makeLinearInputLayer(inputNeurons, ~weights)
+  let inputLayer = makeLinearInputLayer(Some(weights), inputNeurons)
   let outputLayer = makeLinearLayer([endNeuron, endNeuron2, endNeuron3])
   let layers = connectLayers([inputLayer, outputLayer])
 
@@ -107,7 +107,7 @@ let run2 = () => {
   let endNeuron2 = makeOutputNeuron(dot, bias2)
   let endNeuron3 = makeOutputNeuron(dot, bias3)
 
-  let inputLayer = makeLinearInputLayer(inputNeurons, ~weights)
+  let inputLayer = makeLinearInputLayer(Some(weights), inputNeurons)
   let outputLayer = makeLinearLayer([endNeuron, endNeuron2, endNeuron3])
   let layers = connectLayers([inputLayer, outputLayer])
 

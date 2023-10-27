@@ -9,8 +9,6 @@ let getOutputNeuron = synapse =>
   switch synapse {
   | (_, _, output) => output
   }
-//given a synapse, extract the uuid of the output neuron
-let getSynapseOutputNeuronId = synapse => synapse->getOutputNeuron->getNeuronId
 
 type neurons = array<neuron>
 let makeSynapses = (neurons1: neurons, weights: floatMatrix, neurons2: neurons): array<synapse> => {

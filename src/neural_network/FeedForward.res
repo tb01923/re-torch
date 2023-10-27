@@ -5,9 +5,9 @@ open Synapse
 open MathJs.Matrix.Float
 open MathJs.Vector.Float
 
-exception NotImplemented(string, layer)
-let raiseForwardMatrixNotImplemented = layer =>
-  raise(NotImplemented("forwardMatrix is not implemented for this Layer type", layer))
+//exception NotImplemented(string, layer)
+//let raiseForwardMatrixNotImplemented = layer =>
+//  raise(NotImplemented("forwardMatrix is not implemented for this Layer type", layer))
 
 // todo: handle |inputs| != |layer.neurons|
 let forwardFromInput = (layer, inputs) => {
@@ -30,22 +30,6 @@ let forwardFromInput = (layer, inputs) => {
   })
   // convert array of values to vector of values
   toVector(values)
-}
-
-let getValuesAndWeightsFromSynapses: array<synapse> => (
-  MathJs.Vector.Float.t,
-  MathJs.Vector.Float.t,
-) = synapses => {
-  let emptyVector = MathJs.Vector.Float.empty
-  // for each synapse reduce onto a pair of empty arrays by pushing the input neuron value and the weight
-  Belt.Array.reduce(synapses, (emptyVector(), emptyVector()), (agg, synapse) => {
-    let (n1, weight, _) = synapse
-    let (values: MathJs.Vector.Float.t, weights) = agg
-    let value = getNeuronValue(n1)
-    MathJs.Vector.Float.push(values, value)->ignore
-    MathJs.Vector.Float.push(weights, weight)->ignore
-    (values, weights)
-  })
 }
 
 let petitionSynapsesByOutputNeuron = (outputNeuronToMatch, synapses) =>

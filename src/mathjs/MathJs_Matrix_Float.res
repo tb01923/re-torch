@@ -5,7 +5,7 @@ external toMatrix: float_matrix => t = "%identity"
 external fromArrayOfVectors: array<MathJs_Vector_Float.t> => t = "%identity"
 external toArrayOfVectors: t => array<MathJs_Vector_Float.t> = "%identity"
 
-@module("mathjs") external emptyMatrix: unit => t = "matrix"
+//@module("mathjs") external emptyMatrix: unit => t = "matrix"
 //@module("mathjs") external toMatrix: float_matrix => t = "matrix"
 
 @module("mathjs")
