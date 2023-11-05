@@ -3,12 +3,12 @@ open Shared
 type neuronRecord = {
   fn: (MathJs.Vector.Float.t, MathJs.Vector.Float.t) => float,
   bias?: float,
-  mutable value?: float,
+  mutable output?: float,
 }
 
 type inputNeuronRecord = {
   fn: float => float,
-  mutable value?: float,
+  mutable output?: float,
 }
 
 type neuron =
@@ -25,15 +25,15 @@ let getNeuronId = n =>
   | OutputNeuron(uuid, _) => uuid
   }
 
-exception NeuronValueNotSet(neuron)
-let getNeuronValue: neuron => float = n => {
-  let someValue = switch n {
-  | InputNeuron(_, {?value}) => value
-  | OutputNeuron(_, {?value}) => value
+exception NeuronOutputNotSet(neuron)
+let getNeuronOutput: neuron => float = n => {
+  let someOutput = switch n {
+  | InputNeuron(_, {?output}) => output
+  | OutputNeuron(_, {?output}) => output
   }
-  switch someValue {
-  | Some(value) => value
-  | None => raise(NeuronValueNotSet(n))
+  switch someOutput {
+  | Some(output) => output
+  | None => raise(NeuronOutputNotSet(n))
   }
 }
 

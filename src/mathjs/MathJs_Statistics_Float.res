@@ -1,0 +1,1 @@
+@module("mathjs") external max: (float, float) => float = "max"

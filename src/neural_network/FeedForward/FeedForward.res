@@ -1,0 +1,2 @@
+let forwardBatch = FeedForward_BatchInput.forwardBatch
+let forwardSingle = FeedForward_SingleInput.forwardInput

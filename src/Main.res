@@ -4,115 +4,240 @@ open MathJs.Matrix.Float
 /***********************************
  * baseline example
  **********************************/
-let inputVector = toVector([1., 2., 3., 2.5])
-let inputBatch = fromArrayOfVectors([
-  inputVector,
-  toVector([2., 5., -1., 2.]),
-  toVector([-1.5, 2.7, 3.3, -0.8]),
+// data science convention is to use "x" as input variable name
+let singleX = toVector([1., 2., 3., 2.5])
+let x = fromArrayOfVectors([singleX, toVector([2., 5., -1., 2.]), toVector([-1.5, 2.7, 3.3, -0.8])])
+
+let l1Weight1 = toVector([0.2, 0.8, -0.5, 1.0])
+let l1Weight2 = toVector([0.5, -0.91, 0.26, -0.5])
+let l1Weight3 = toVector([-0.26, -0.27, 0.17, 0.87])
+let l1Weights = fromArrayOfVectors([l1Weight1, l1Weight2, l1Weight3])
+
+let l1Bias1 = 2.
+let l1Bias2 = 3.
+let l1Bias3 = 0.5
+let l1Biases = toMatrix([[l1Bias1, l1Bias2, l1Bias3]])
+
+let l2Weights = fromArrayOfVectors([
+  toVector([0.1, -0.14, 0.5]),
+  toVector([-0.5, 0.12, -0.33]),
+  toVector([-0.44, 0.73, -0.13]),
 ])
 
-let weight1 = toVector([0.2, 0.8, -0.5, 1.0])
-let weight2 = toVector([0.5, -0.91, 0.26, -0.5])
-let weight3 = toVector([-0.26, -0.27, 0.17, 0.87])
-let weights = fromArrayOfVectors([weight1, weight2, weight3])
-
-let bias1 = 2.
-let bias2 = 3.
-let bias3 = 0.5
-
-let biases = toMatrix([[bias1, bias2, bias3]])
-
-Js.Console.log("------------------")
-Js.Console.log("Dot Product Math \n")
-
-let output = [
-  dot(inputVector, weight1) +. bias1,
-  dot(inputVector, weight2) +. bias2,
-  dot(inputVector, weight3) +. bias3,
-]
-Js.Console.log(output)
-
-Js.Console.log("------------------")
-Js.Console.log("Matrix Math \n")
-let out = inputVector->fromVector->transpose->multiply(weights, _)->add(transpose(biases))
-Js.Console.log(out)
-
-Js.Console.log("------------------")
-Js.Console.log("Linear Matrix with single Vector Input \n")
-
-open Layer
-open FeedForward
-
-let matrixLayerRecord = {
-  inputNeuronCount: 4,
-  outputNeuronCount: 3,
-  weights,
-  biases,
-}
-let matrixLayer = LinearMatrixLayer(matrixLayerRecord)
-
-forwardVector([matrixLayer], inputVector)->ignore
-Js.Console.log(matrixLayerRecord.values)
-Js.Console.log("------------------")
-Js.Console.log("Linear Matrix with batch Input \n")
-
-let matrixLayerRecord2 = {
-  inputNeuronCount: 4,
-  outputNeuronCount: 3,
-  weights,
-  biases,
-}
-let matrixLayer2 = LinearMatrixLayer(matrixLayerRecord2)
-
-let outputs = forwardMatrix([matrixLayer2], inputBatch)
-Js.Console.log(outputs)
-Js.Console.log("------------------")
-Js.Console.log("Linear synapse approach\n")
-
-/***********************************
- * modeled solution 1 types
- **********************************/
-let run = () => {
-  open Neuron
-
-  // for each input we need an input neuron
-  let inputLength = MathJs.Vector.Float.length(inputVector)
-  let inputNeurons: array<neuron> = Belt.Array.makeBy(inputLength, _ => makeInputNeuron())
-
-  // we need some elements in the next layer to combine elements
-  let endNeuron = makeOutputNeuron(dot, bias1)
-  let endNeuron2 = makeOutputNeuron(dot, bias2)
-  let endNeuron3 = makeOutputNeuron(dot, bias3)
-
-  let inputLayer = makeLinearInputLayer(Some(weights), inputNeurons)
-  let outputLayer = makeLinearLayer([endNeuron, endNeuron2, endNeuron3])
-  let layers = connectLayers([inputLayer, outputLayer])
-
-  forwardVector(layers, inputVector)->ignore
-  outputLayer->getNeurons->Belt.Array.map(getNeuronValue)->Js.Console.log
-}
-run()
-
-Js.Console.log("------------------")
-Js.Console.log("Linear synapse approach, batch input\n")
-let run2 = () => {
-  open Neuron
-
-  // for each input we need an input neuron
-  let inputLength = MathJs.Vector.Float.length(inputVector)
-  let inputNeurons: array<neuron> = Belt.Array.makeBy(inputLength, _ => makeInputNeuron())
-
-  // we need some elements in the next layer to combine elements
-  let endNeuron = makeOutputNeuron(dot, bias1)
-  let endNeuron2 = makeOutputNeuron(dot, bias2)
-  let endNeuron3 = makeOutputNeuron(dot, bias3)
-
-  let inputLayer = makeLinearInputLayer(Some(weights), inputNeurons)
-  let outputLayer = makeLinearLayer([endNeuron, endNeuron2, endNeuron3])
-  let layers = connectLayers([inputLayer, outputLayer])
-
-  let outputs = forwardMatrix(layers, inputBatch)
-  Js.Console.log(outputs)
+let l2Bias1 = -1.
+let l2Bias2 = 2.
+let l2Bias3 = -0.5
+let l2Biases = toMatrix([[l2Bias1, l2Bias2, l2Bias3]])
+let runDotProductMath = () => {
   Js.Console.log("------------------")
+  Js.Console.log("Dot Product Math \n")
+
+  let output = [
+    dot(singleX, l1Weight1) +. l1Bias1,
+    dot(singleX, l1Weight2) +. l1Bias2,
+    dot(singleX, l1Weight3) +. l1Bias3,
+  ]
+  Js.Console.log(output)
+
+  Js.Console.log("------------------")
+  Js.Console.log("Matrix Math \n")
+  let out = singleX->fromVector->transpose->multiply(l1Weights, _)->add(transpose(l1Biases))
+  Js.Console.log(out)
 }
-run2()
+
+let runSingleLinearMatrixWithSingleVectorInput = () => {
+  Js.Console.log("------------------")
+  Js.Console.log("Linear Matrix with single Vector Input \n")
+
+  open Layer
+  open FeedForward
+
+  let matrixLayerRecord = {
+    numInputs: 4,
+    numNeurons: 3,
+    weights: l1Weights,
+    biases: l1Biases,
+  }
+  let matrixLayer = DenseLayer(matrixLayerRecord)
+
+  forwardSingle([matrixLayer], singleX)->ignore
+  Js.Console.log(matrixLayerRecord.output)
+}
+
+let runSingleLinearMatrixBatchInput = () => {
+  open Layer
+  open FeedForward
+
+  Js.Console.log("------------------")
+  Js.Console.log("Linear Matrix with batch Input \n")
+
+  let matrixLayerRecord2 = {
+    numInputs: 4,
+    numNeurons: 3,
+    weights: transpose(l1Weights),
+    biases: l1Biases,
+  }
+  let matrixLayer2 = DenseLayer(matrixLayerRecord2)
+
+  let outputs = forwardBatch([matrixLayer2], x)
+  Js.Console.log(outputs)
+}
+
+let runSynapseApproachSingleVectorInput = () => {
+  Js.Console.log("------------------")
+  Js.Console.log("Linear synapse approach, single vector input\n")
+
+  open Neuron
+  open Layer
+  open FeedForward
+
+  // for each input we need an input neuron
+  let inputLength = MathJs.Vector.Float.length(singleX)
+  let inputNeurons: array<neuron> = Belt.Array.makeBy(inputLength, _ => makeInputNeuron())
+
+  // we need some elements in the next layer to combine elements
+  let endNeuron = makeOutputNeuron(dot, l1Bias1)
+  let endNeuron2 = makeOutputNeuron(dot, l1Bias2)
+  let endNeuron3 = makeOutputNeuron(dot, l1Bias3)
+
+  let inputLayer = makeDenseGraphInputLayer(Some(l1Weights), inputNeurons)
+  let outputLayer = makeDenseGraphLayer([endNeuron, endNeuron2, endNeuron3])
+  let layers = connectLayers([inputLayer, outputLayer])
+
+  forwardSingle(layers, singleX)->ignore
+  outputLayer->getNeurons->Belt.Array.map(getNeuronOutput)->Js.Console.log
+}
+
+let runSynapseApproachBatchInput = () => {
+  Js.Console.log("------------------")
+  Js.Console.log("Linear synapse approach, batch input\n")
+
+  open Neuron
+  open Layer
+  open FeedForward
+
+  let inputLayer = makeDenseGraphInputLayer(
+    Some(l1Weights),
+    [makeInputNeuron(), makeInputNeuron(), makeInputNeuron(), makeInputNeuron()],
+  )
+  let layer1 = makeDenseGraphLayer([
+    makeOutputNeuron(dot, l1Bias1),
+    makeOutputNeuron(dot, l1Bias2),
+    makeOutputNeuron(dot, l1Bias3),
+  ])
+  let layers = connectLayers([inputLayer, layer1])
+
+  let outputs = forwardBatch(layers, x)
+  Js.Console.log(outputs)
+}
+
+let runTwoLayerSynapseApproachBatchInput = () => {
+  Js.Console.log("------------------")
+  Js.Console.log("Two Layer Linear synapse approach, batch input\n")
+
+  open Neuron
+  open Layer
+  open FeedForward
+
+  let inputLayer = makeDenseGraphInputLayer(
+    Some(l1Weights),
+    [makeInputNeuron(), makeInputNeuron(), makeInputNeuron(), makeInputNeuron()],
+  )
+  let layer1 = makeDenseGraphLayer(
+    ~weights=l2Weights,
+    [
+      makeOutputNeuron(dot, l1Bias1),
+      makeOutputNeuron(dot, l1Bias2),
+      makeOutputNeuron(dot, l1Bias3),
+    ],
+  )
+
+  let layer2 = makeDenseGraphLayer([
+    makeOutputNeuron(dot, l2Bias1),
+    makeOutputNeuron(dot, l2Bias2),
+    makeOutputNeuron(dot, l2Bias3),
+  ])
+
+  let network = connectLayers([inputLayer, layer1, layer2])
+
+  let outputs = forwardBatch(network, x)
+  Js.Console.log(outputs)
+}
+
+let runTwoLinearMatrixBatchInput = () => {
+  open Layer
+  open FeedForward
+
+  Js.Console.log("------------------")
+  Js.Console.log("Two Layer Linear Matrix with batch Input \n")
+
+  let matrixLayer1 = DenseLayer({
+    numInputs: 4,
+    numNeurons: 3,
+    weights: transpose(l1Weights),
+    biases: l1Biases,
+  })
+
+  let matrixLayer2 = DenseLayer({
+    numInputs: 3,
+    numNeurons: 3,
+    weights: transpose(l2Weights),
+    biases: l2Biases,
+  })
+
+  let network = [matrixLayer1, matrixLayer2]
+
+  let outputs = forwardBatch(network, x)
+  Js.Console.log(outputs)
+}
+
+let runTwoLinearMatrixBatchInputGeneratedLayer = () => {
+  open Layer
+  open FeedForward
+
+  Js.Console.log("------------------")
+  Js.Console.log("Linear Network from constructor\n")
+
+  let network = [makeDenseLayer(4, 3), makeReLU(), makeDenseLayer(3, 3), makeSoftmax()]
+
+  let outputs = forwardBatch(network, x)
+  Js.Console.log(outputs)
+}
+
+//runDotProductMath()
+//runSingleLinearMatrixWithSingleVectorInput()
+//runSingleLinearMatrixBatchInput()
+//runSynapseApproachSingleVectorInput()
+//runSynapseApproachBatchInput()
+//runTwoLinearMatrixBatchInput()
+//runTwoLayerSynapseApproachBatchInput()
+runTwoLinearMatrixBatchInputGeneratedLayer()
+
+let xs = [4.8, 1.21, 2.385]
+
+let f1ThenF2 = (f1, f2, xs) => {
+  let r1 = f1(xs)
+  let r2 = f2(xs, r1)
+  r2
+}
+
+let sumArray = xs => Belt.Array.reduce(xs, 0.0, (a, b) => a +. b)
+let calcProb = (xs, total) => Belt.Array.map(xs, x => x /. total)
+let softmax = xs => {
+  let e_xs = xs->Belt.Array.map(x => MathJs.General.pow(MathJs.General.e, x))
+  f1ThenF2(sumArray, calcProb)(e_xs)
+}
+let softmax2 = xs => {
+  let e_xs = xs->Belt.Array.map(x => MathJs.General.pow(MathJs.General.e, x))
+  let total = sumArray(e_xs)
+  calcProb(e_xs, total)
+}
+let softmax3 = xs => {
+  let e_xs = xs->Belt.Array.map(x => MathJs.General.pow(MathJs.General.e, x))
+  let total = sumArray(e_xs)
+  calcProb(e_xs, total)
+}
+
+softmax(xs)->Js.Console.log
+softmax2(xs)->Js.Console.log
+softmax3(xs)->Js.Console.log
