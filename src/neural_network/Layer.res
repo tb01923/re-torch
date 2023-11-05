@@ -17,21 +17,27 @@ type matrixImplementation = {
   mutable output?: floatMatrix,
 }
 
+type denseLayer =
+  | DenseMatrixLayer(matrixImplementation)
+  | DenseGraphLayer(graphImplementation)
+  | DenseGraphInputLayer(graphImplementation)
+
 type activationRecord = {fn: float => float}
 type layerActivationRecord = {fn: floatVector => floatVector}
 
-type layer =
-  | DenseLayer(matrixImplementation)
-  | DenseGraphLayer(graphImplementation)
-  | DenseGraphInputLayer(graphImplementation)
-  | Activation(activationRecord)
-  | LayerActivation(layerActivationRecord)
+type activationLayer =
+  | Neuron(activationRecord)
+  | Layer(layerActivationRecord)
+
+type layer = Dense({implementation: denseLayer}) | Activation({implementation: activationLayer})
 
 exception UnexpectedLayer(string, layer)
+exception UnexpectedDenseLayer(string, denseLayer)
 exception LayerMismatch(string, layer, layer)
 
-let raiseNoSynapses = layer => raise(UnexpectedLayer("No synapses in Layer", layer))
-let raiseNoNeurons = layer => raise(UnexpectedLayer("No neurons in Layer", layer))
+let raiseNotDense = layer => raise(UnexpectedLayer("Not dense Layer", layer))
+let raiseNoSynapses = layer => raise(UnexpectedDenseLayer("No synapses in Layer", layer))
+let raiseNoNeurons = layer => raise(UnexpectedDenseLayer("No neurons in Layer", layer))
 let raiseInvalidLayerConnection = (layer1, layer2) =>
   raise(LayerMismatch("Layers cannot be connected", layer1, layer2))
 let raiseExpectedWeightedSynapses = (layer1, layer2) =>
@@ -39,27 +45,31 @@ let raiseExpectedWeightedSynapses = (layer1, layer2) =>
 
 let makeDenseGraphLayer = (~weights: option<floatMatrix>=?, neurons) =>
   switch weights {
-  | Some(w) => DenseGraphLayer({neurons, initialWeights: w})
-  | _ => DenseGraphLayer({neurons: neurons})
+  | Some(w) => Dense({implementation: DenseGraphLayer({neurons, initialWeights: w})})
+  | _ => Dense({implementation: DenseGraphLayer({neurons: neurons})})
   }
 
 let makeDenseGraphInputLayer = (weights: option<floatMatrix>, neurons) =>
   switch weights {
-  | Some(w) => DenseGraphInputLayer({neurons, initialWeights: w})
-  | _ => DenseGraphInputLayer({neurons: neurons})
+  | Some(w) => Dense({implementation: DenseGraphInputLayer({neurons, initialWeights: w})})
+  | _ => Dense({implementation: DenseGraphInputLayer({neurons: neurons})})
   }
 
-let makeDenseLayer = (nInputs, nNeurons) => {
+let makeDenseMatrixLayer = (nInputs, nNeurons) => {
   open MathJs.Matrix.Float
-  DenseLayer({
-    numInputs: nInputs,
-    numNeurons: nNeurons,
-    weights: initRandom([nInputs, nNeurons], -1., 1.),
-    biases: zeros([1, nNeurons]),
+  Dense({
+    implementation: DenseMatrixLayer({
+      numInputs: nInputs,
+      numNeurons: nNeurons,
+      weights: initRandom([nInputs, nNeurons], -1., 1.),
+      biases: zeros([1, nNeurons]),
+    }),
   })
 }
 
-let makeReLU = () => Activation({fn: x => MathJs.Statistics.Float.max(x, 0.)})
+let makeReLU = () => Activation({
+  implementation: Neuron({fn: x => MathJs.Statistics.Float.max(x, 0.)}),
+})
 
 let makeSoftmax = () => {
   let sumArray = xs => MathJs.Vector.Float.reduce(xs, 0.0, (a, b) => a +. b)
@@ -69,15 +79,24 @@ let makeSoftmax = () => {
     let total = sumArray(e_xs)
     calcProb(e_xs, total)
   }
-  LayerActivation({fn: softmax})
+  Activation({
+    implementation: Layer({fn: softmax}),
+  })
 }
 
-let getNeurons = layer =>
+let getDenseLayer = layer =>
+  switch layer {
+  | Dense({implementation}) => implementation
+  | _ => raiseNotDense(layer)
+  }
+
+let getNeurons = layer => {
   switch layer {
   | DenseGraphInputLayer({neurons, _}) => neurons
   | DenseGraphLayer({neurons, _}) => neurons
   | _ => raiseNoNeurons(layer)
   }
+}
 
 let getInputSynapses = layer => {
   let inputSynapses = switch layer {
@@ -104,10 +123,17 @@ let connectLayer1ToLayer2 = (layer1, layer2) => {
       }
     }
   }
+
   switch (layer1, layer2) {
-  | (DenseGraphInputLayer(layerRecord1), DenseGraphLayer(layerRecord2)) =>
+  | (
+      Dense({implementation: DenseGraphInputLayer(layerRecord1)}),
+      Dense({implementation: DenseGraphLayer(layerRecord2)}),
+    ) =>
     connectLayers(layerRecord1, layerRecord2)
-  | (DenseGraphLayer(layerRecord1), DenseGraphLayer(layerRecord2)) =>
+  | (
+      Dense({implementation: DenseGraphLayer(layerRecord1)}),
+      Dense({implementation: DenseGraphLayer(layerRecord2)}),
+    ) =>
     connectLayers(layerRecord1, layerRecord2)
   | (_, _) => raiseInvalidLayerConnection(layer1, layer2)
   }

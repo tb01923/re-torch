@@ -3,29 +3,27 @@ open Layer
 open FeedForward_Shared
 open MathJs.Matrix.Float
 
-let feedDenseLayer = (layer, inputs) => {
-  switch layer {
-  | DenseLayer(record) => {
-      let {weights, biases} = record
-      let values = inputs->fromVector->transpose->multiply(weights, _)->add(transpose(biases))
-      record.output = Some(values)
-      let valuesArray = toArrayOfVectors(values)
-      let valuesVector = Belt.Array.getUnsafe(valuesArray, 0)
+let feedDenseLayer = (layerRecord, inputs) => {
+  let {weights, biases} = layerRecord
+  let values = inputs->fromVector->transpose->multiply(weights, _)->add(transpose(biases))
+  layerRecord.output = Some(values)
+  let valuesArray = toArrayOfVectors(values)
+  let valuesVector = Belt.Array.getUnsafe(valuesArray, 0)
 
-      valuesVector
-    }
-
-  | _ => raise(UnexpectedLayer("Expecting DenseLayer", layer))
-  }
+  valuesVector
 }
+
+let feedDenseLayer = (denseLayer, vector) =>
+  switch denseLayer {
+  | DenseGraphInputLayer(_) => feedInput(denseLayer, vector)
+  | DenseGraphLayer(_) => feedPriorLayerOutput(denseLayer, vector)
+  | DenseMatrixLayer(layerRecord) => feedDenseLayer(layerRecord, vector)
+  }
 
 let forwardInput: (array<layer>, floatVector) => floatVector = (layers, inputs) =>
   Belt.Array.reduce(layers, inputs, (layerInputs, layer) => {
     switch layer {
-    | DenseGraphInputLayer(_) => feedInput(layer, layerInputs)
-    | DenseGraphLayer(_) => feedPriorLayerOutput(layer, layerInputs)
-    | DenseLayer(_) => feedDenseLayer(layer, layerInputs)
-    | Activation(_) => feedActivation(layer, layerInputs)
-    | LayerActivation(_) => feedActivation(layer, layerInputs)
+    | Dense({implementation: denseLayer}) => feedDenseLayer(denseLayer, layerInputs)
+    | Activation({implementation: activationLayer}) => feedActivation(activationLayer, layerInputs)
     }
   })

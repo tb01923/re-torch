@@ -58,7 +58,7 @@ let runSingleLinearMatrixWithSingleVectorInput = () => {
     weights: l1Weights,
     biases: l1Biases,
   }
-  let matrixLayer = DenseLayer(matrixLayerRecord)
+  let matrixLayer = Dense({implementation: DenseMatrixLayer(matrixLayerRecord)})
 
   forwardSingle([matrixLayer], singleX)->ignore
   Js.Console.log(matrixLayerRecord.output)
@@ -77,7 +77,7 @@ let runSingleLinearMatrixBatchInput = () => {
     weights: transpose(l1Weights),
     biases: l1Biases,
   }
-  let matrixLayer2 = DenseLayer(matrixLayerRecord2)
+  let matrixLayer2 = Dense({implementation: DenseMatrixLayer(matrixLayerRecord2)})
 
   let outputs = forwardBatch([matrixLayer2], x)
   Js.Console.log(outputs)
@@ -105,7 +105,7 @@ let runSynapseApproachSingleVectorInput = () => {
   let layers = connectLayers([inputLayer, outputLayer])
 
   forwardSingle(layers, singleX)->ignore
-  outputLayer->getNeurons->Belt.Array.map(getNeuronOutput)->Js.Console.log
+  outputLayer->getDenseLayer->getNeurons->Belt.Array.map(getNeuronOutput)->Js.Console.log
 }
 
 let runSynapseApproachBatchInput = () => {
@@ -171,18 +171,22 @@ let runTwoLinearMatrixBatchInput = () => {
   Js.Console.log("------------------")
   Js.Console.log("Two Layer Linear Matrix with batch Input \n")
 
-  let matrixLayer1 = DenseLayer({
-    numInputs: 4,
-    numNeurons: 3,
-    weights: transpose(l1Weights),
-    biases: l1Biases,
+  let matrixLayer1 = Dense({
+    implementation: DenseMatrixLayer({
+      numInputs: 4,
+      numNeurons: 3,
+      weights: transpose(l1Weights),
+      biases: l1Biases,
+    }),
   })
 
-  let matrixLayer2 = DenseLayer({
-    numInputs: 3,
-    numNeurons: 3,
-    weights: transpose(l2Weights),
-    biases: l2Biases,
+  let matrixLayer2 = Dense({
+    implementation: DenseMatrixLayer({
+      numInputs: 3,
+      numNeurons: 3,
+      weights: transpose(l2Weights),
+      biases: l2Biases,
+    }),
   })
 
   let network = [matrixLayer1, matrixLayer2]
@@ -198,46 +202,28 @@ let runTwoLinearMatrixBatchInputGeneratedLayer = () => {
   Js.Console.log("------------------")
   Js.Console.log("Linear Network from constructor\n")
 
-  let network = [makeDenseLayer(4, 3), makeReLU(), makeDenseLayer(3, 3), makeSoftmax()]
+  let network = [
+    makeDenseMatrixLayer(4, 3),
+    makeReLU(),
+    makeDenseMatrixLayer(3, 10),
+    makeReLU(),
+    makeDenseMatrixLayer(10, 60),
+    makeReLU(),
+    makeDenseMatrixLayer(60, 20),
+    makeReLU(),
+    makeDenseMatrixLayer(20, 3),
+    makeSoftmax(),
+  ]
 
   let outputs = forwardBatch(network, x)
   Js.Console.log(outputs)
 }
 
-//runDotProductMath()
-//runSingleLinearMatrixWithSingleVectorInput()
-//runSingleLinearMatrixBatchInput()
-//runSynapseApproachSingleVectorInput()
-//runSynapseApproachBatchInput()
-//runTwoLinearMatrixBatchInput()
-//runTwoLayerSynapseApproachBatchInput()
+runDotProductMath()
+runSingleLinearMatrixWithSingleVectorInput()
+runSingleLinearMatrixBatchInput()
+runSynapseApproachSingleVectorInput()
+runSynapseApproachBatchInput()
+runTwoLinearMatrixBatchInput()
+runTwoLayerSynapseApproachBatchInput()
 runTwoLinearMatrixBatchInputGeneratedLayer()
-
-let xs = [4.8, 1.21, 2.385]
-
-let f1ThenF2 = (f1, f2, xs) => {
-  let r1 = f1(xs)
-  let r2 = f2(xs, r1)
-  r2
-}
-
-let sumArray = xs => Belt.Array.reduce(xs, 0.0, (a, b) => a +. b)
-let calcProb = (xs, total) => Belt.Array.map(xs, x => x /. total)
-let softmax = xs => {
-  let e_xs = xs->Belt.Array.map(x => MathJs.General.pow(MathJs.General.e, x))
-  f1ThenF2(sumArray, calcProb)(e_xs)
-}
-let softmax2 = xs => {
-  let e_xs = xs->Belt.Array.map(x => MathJs.General.pow(MathJs.General.e, x))
-  let total = sumArray(e_xs)
-  calcProb(e_xs, total)
-}
-let softmax3 = xs => {
-  let e_xs = xs->Belt.Array.map(x => MathJs.General.pow(MathJs.General.e, x))
-  let total = sumArray(e_xs)
-  calcProb(e_xs, total)
-}
-
-softmax(xs)->Js.Console.log
-softmax2(xs)->Js.Console.log
-softmax3(xs)->Js.Console.log

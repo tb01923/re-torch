@@ -61,7 +61,6 @@ let feedPriorLayerOutput = (layer, inputs) => {
 
 let feedActivation = (layer, inputs) =>
   switch layer {
-  | Activation({fn}) => map(inputs, fn)
-  | LayerActivation({fn}) => fn(inputs)
-  | _ => raise(UnexpectedLayer("Expecting Activation layer", layer))
+  | Neuron({fn}) => map(inputs, fn)
+  | Layer({fn}) => fn(inputs)
   }
